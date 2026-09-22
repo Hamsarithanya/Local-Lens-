@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocalLens - Hyperlocal Finder</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+
+        /* Dark Hero Palette matching Image 2 */
+        .bg-dark-navy {
+            background-color: #0b1329;
+        }
+        .bg-dark-card {
+            background-color: #111c38;
+        }
+
+        /* Accent Colors */
+        .text-emerald-brand {
+            color: #00d084;
+        }
+        .bg-emerald-brand {
+            background-color: #00d084;
+        }
+        .border-emerald-brand {
+            border-color: #00d084;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        /* Slider Thumb styling */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #00d084;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 208, 132, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+
+    <!-- Top Header & Hero Area -->
+    <header class="bg-dark-navy text-white pb-10 pt-4 px-4 sm:px-8 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto space-y-8">
+            
+            <!-- Header Top Navigation Row -->
+            <div class="flex items-center justify-between gap-4">
+                <!-- Logo -->
+                <div class="flex items-center gap-3 cursor-pointer" onclick="resetAll()">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-brand/20 border border-emerald-brand/40 flex items-center justify-center text-emerald-brand">
+                        <i data-lucide="map-pin" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="font-extrabold text-xl tracking-tight text-white">Local<span class="text-emerald-brand">Lens</span></span>
+                        </div>
+                        <p class="text-[10px] font-bold text-slate-400 tracking-wider uppercase">HYPERLOCAL FINDER</p>
+                    </div>
+                </div>
+
+                <!-- Right Top Actions (Location & Add Shop) -->
+                <div class="flex items-center gap-3">
+                    <div class="hidden sm:flex items-center gap-2 bg-slate-800/80 hover:bg-slate-800 text-slate-200 border border-slate-700/60 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all">
+                        <i data-lucide="navigation" class="w-3.5 h-3.5 text-emerald-brand"></i>
+                        <span>TN Nagar, Chennai</span>
+                        <span class="bg-emerald-500/20 text-emerald-300 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Active</span>
+                    </div>
+
+                    <button onclick="openMerchantModal()" class="bg-emerald-brand hover:bg-emerald-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-xs flex items-center gap-2 transition-all shadow-lg shadow-emerald-950/50 active:scale-95">
+                        <i data-lucide="store" class="w-4 h-4"></i>
+                        <span>Add Shop Item</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Big Banner Title & Integrated Search Box -->
+            <div class="text-center max-w-3xl mx-auto pt-2 space-y-6">
+                <h1 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+                    Find Local Shop Items <span class="text-slate-400">&amp;</span> <span class="text-emerald-brand">Exact Rupee Prices</span>
+                </h1>
+
+                <!-- Prominent Interactive Search Bar -->
+                <div class="relative max-w-2xl mx-auto">
+                    <div class="relative flex items-center">
+                        <i data-lucide="search" class="absolute left-4 w-5 h-5 text-slate-400"></i>
+                        <input 
+                            type="text" 
+                            id="heroSearchInput" 
+                            placeholder="Search items like 'Basmati Rice', 'Curd', 'Earbuds', or 'Phone'..." 
+                            class="w-full pl-12 pr-10 py-3.5 bg-white text-slate-900 rounded-2xl text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-emerald-brand/40 shadow-xl placeholder:text-slate-400"
+                            oninput="handleSearch(this.value)"
+                        >
+                        <button 
+                            id="clearSearchBtn" 
+                            onclick="clearSearch()" 
+                            class="hidden absolute right-3.5 p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                        >
+                            <i data-lucide="x" class="w-4.5 h-4.5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Quick Query Pill Suggestions -->
+                    <div class="flex flex-wrap items-center justify-center gap-2 pt-3 text-xs">
+                        <span class="text-slate-400 font-medium">Try searching:</span>
+                        <button onclick="quickSearch('Rice')" class="bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-700 transition-colors">🌾 Basmati Rice</button>
+                        <button onclick="quickSearch('Curd')" class="bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-700 transition-colors">🥛 Fresh Curd</button>
+                        <button onclick="quickSearch('Earbuds')" class="bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-700 transition-colors">🎧 Earbuds</button>
+                        <button onclick="quickSearch('Phone')" class="bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-700 transition-colors">📱 Mobile Phones</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-8 py-8 flex-1 w-full">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+            <!-- LEFT SIDEBAR: Filters & Weights (4 Cols) -->
+            <aside class="lg:col-span-4 space-y-6">
+
+                <!-- 1. STORE TYPE TOGGLE -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+                    <div class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        <i data-lucide="store" class="w-4 h-4 text-emerald-600"></i> STORE TYPE
+                    </div>
+                    <div class="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-xl text-xs font-bold text-slate-600">
+                        <button onclick="setStoreType('All')" id="btnStoreAll" class="py-2 rounded-lg bg-white text-slate-900 shadow-sm transition-all">All</button>
+                        <button onclick="setStoreType('Local')" id="btnStoreLocal" class="py-2 rounded-lg hover:text-slate-900 transition-all flex items-center justify-center gap-1">
+                            <span>🏪 Local</span>
+                        </button>
+                        <button onclick="setStoreType('Online')" id="btnStoreOnline" class="py-2 rounded-lg hover:text-slate-900 transition-all flex items-center justify-center gap-1">
+                            <span>🌐 Online</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. CATEGORY SELECTOR -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="grid" class="w-4 h-4 text-emerald-600"></i> CATEGORY
+                        </div>
+                        <button onclick="selectCategory('All')" class="text-emerald-700 hover:underline capitalize font-semibold text-[11px]">Reset</button>
+                    </div>
+
+                    <div class="space-y-1" id="categoryList">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- 3. MATCH SCORE WEIGHTS SLIDERS -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            <i data-lucide="sliders" class="w-4 h-4 text-emerald-600"></i> MATCH SCORE WEIGHTS
+                        </div>
+                        <button onclick="resetWeights()" class="text-xs text-emerald-700 font-bold hover:underline">Reset</button>
+                    </div>
+
+                    <div class="space-y-3.5 pt-1">
+                        <!-- Slider 1: Price Value -->
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-xs font-semibold">
+                                <span class="text-slate-700">Price Value</span>
+                                <span id="weightPriceVal" class="text-emerald-700 font-bold">40%</span>
+                            </div>
+                            <input type="range" id="sliderPrice" min="0" max="100" value="40" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer" oninput="updateMatchScores()">
+                        </div>
+
+                        <!-- Slider 2: Store Rating -->
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-xs font-semibold">
+                                <span class="text-slate-700">Store Rating</span>
+                                <span id="weightRatingVal" class="text-emerald-700 font-bold">30%</span>
+                            </div>
+                            <input type="range" id="sliderRating" min="0" max="100" value="30" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer" oninput="updateMatchScores()">
+                        </div>
+
+                        <!-- Slider 3: Fast Delivery / Pickup -->
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-xs font-semibold">
+                                <span class="text-slate-700">Delivery / Pickup Speed</span>
+                                <span id="weightSpeedVal" class="text-emerald-700 font-bold">20%</span>
+                            </div>
+                            <input type="range" id="sliderSpeed" min="0" max="100" value="20" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer" oninput="updateMatchScores()">
+                        </div>
+
+                        <!-- Slider 4: Local Kirana Preference -->
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-xs font-semibold">
+                                <span class="text-slate-700">Local Kirana Preference</span>
+                                <span id="weightLocalVal" class="text-emerald-700 font-bold">10%</span>
+                            </div>
+                            <input type="range" id="sliderLocal" min="0" max="100" value="10" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer" oninput="updateMatchScores()">
+                        </div>
+                    </div>
+                </div>
+
+            </aside>
+
+            <!-- RIGHT MAIN CONTENT: Product Cards Grid (8 Cols) -->
+            <section class="lg:col-span-8 space-y-5">
+
+                <!-- Results Header Bar -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <h2 id="resultsCountHeading" class="text-base font-extrabold text-slate-900">Found 0 Items</h2>
+                        <p class="text-xs text-slate-500">Showing matching items from local neighborhood stores and online options</p>
+                    </div>
+
+                    <!-- Sort Selector -->
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs text-slate-500 font-semibold whitespace-nowrap">Sort By:</label>
+                        <select id="sortSelect" onchange="renderProducts()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="match">Best Match Score</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="rating">Store Rating</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Product Grid matching Screenshot Style -->
+                <div id="productGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Cards populated by JavaScript -->
+                </div>
+
+            </section>
+        </div>
+    </main>
+
+    <!-- PRODUCT DETAILS MODAL -->
+    <div id="detailsModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-6 relative overflow-hidden">
+            <button onclick="closeDetailsModal()" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <div id="modalContent">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MERCHANT ADD SHOP ITEM MODAL -->
+    <div id="merchantModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-5 relative">
+            <button onclick="closeMerchantModal()" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <div class="space-y-1">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
+                    <i data-lucide="store" class="w-3.5 h-3.5"></i> Merchant Dashboard
+                </div>
+                <h3 class="text-xl font-extrabold text-slate-900">Add Shop Item Live</h3>
+                <p class="text-xs text-slate-500">Instantly make your store inventory searchable by local buyers in Chennai & TN Nagar.</p>
+            </div>
+
+            <form id="merchantForm" onsubmit="handleMerchantSubmit(event)" class="space-y-3.5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Shop Name</label>
+                    <input type="text" id="mShopName" required placeholder="e.g. Sri Lakshmi Kirana & Grocery" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Product Title</label>
+                    <input type="text" id="mItemTitle" required placeholder="e.g. Basmati Rice (Premium Long Grain)" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Price (₹)</label>
+                        <input type="number" id="mPrice" required placeholder="50" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Unit / Quantity</label>
+                        <input type="text" id="mUnit" required placeholder="per kg" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Category</label>
+                        <select id="mCategory" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="Grains & Rice">Grains & Rice</option>
+                            <option value="Dairy & Milk">Dairy & Milk</option>
+                            <option value="Grocery">Grocery</option>
+                            <option value="Electronics">Electronics</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Est. Delivery Time</label>
+                        <input type="text" id="mTime" placeholder="10-15 mins" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-3 bg-emerald-brand hover:bg-emerald-400 text-slate-950 font-extrabold rounded-2xl text-xs transition-all shadow-md active:scale-95 mt-2">
+                    Publish Item to Hyperlocal Feed
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Database of Local & Online Products matching Image 2
+        const productsDatabase = [
+            {
+                id: 'prod-1',
+                title: 'Basmati Rice (Premium Long Grain)',
+                category: 'Grains & Rice',
+                price: 50,
+                unit: 'per kg',
+                store: 'Sri Lakshmi Kirana & Grocery',
+                storeType: 'Local',
+                rating: 4.8,
+                deliveryTime: '15-20 mins',
+                badgeText: 'LOCAL SHOP',
+                image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=400&q=80',
+                description: 'Aged long-grain aromatic basmati rice directly sourced from local mills. Perfect for Biryani and Daily meals.',
+                pros: ['Fresh local batch', 'No delivery charges for nearby homes', 'Instant 15-min pickup'],
+                cons: ['Limited stock per order']
+            },
+            {
+                id: 'prod-2',
+                title: 'Fresh Curd (Dahi)',
+                category: 'Dairy & Milk',
+                price: 10,
+                unit: 'per 200g packet',
+                store: 'Aavin / Heritage Local Shop',
+                storeType: 'Local',
+                rating: 4.9,
+                deliveryTime: '10 mins',
+                badgeText: 'LOCAL SHOP',
+                image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=400&q=80',
+                description: 'Thick, creamy chilled farm-fresh curd delivered daily every morning.',
+                pros: ['Set daily at 5 AM', 'Rich probiotic culture', 'Lowest price in neighborhood'],
+                cons: ['Best consumed within 2 days']
+            },
+            {
+                id: 'prod-3',
+                title: 'boAt Airdopes 141 TWS Earbuds',
+                category: 'Electronics',
+                price: 1799,
+                unit: 'per unit',
+                store: 'Sri Balaji Mobile & Electronics',
+                storeType: 'Local',
+                rating: 4.3,
+                deliveryTime: 'Same day pickup',
+                badgeText: 'LOCAL SHOP',
+                image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=400&q=80',
+                description: '42 Hours playback, ENx Tech noise cancellation, low latency mode for gaming.',
+                pros: ['Instant local store warranty', 'Good bass output', 'Type-C Fast Charging'],
+                cons: ['No Active Noise Cancellation']
+            },
+            {
+                id: 'prod-4',
+                title: 'boAt Airdopes 141 (Online Deal)',
+                category: 'Electronics',
+                price: 1699,
+                unit: 'per unit',
+                store: 'Amazon / Flipkart Online',
+                storeType: 'Online',
+                rating: 4.4,
+                deliveryTime: 'Delivers in 1-2 days',
+                badgeText: 'ONLINE DEALS',
+                image: 'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?auto=format&fit=crop&w=400&q=80',
+                description: 'Online direct fulfilled e-commerce inventory with doorstep standard delivery.',
+                pros: ['Slightly lower price tag', 'Multiple color options'],
+                cons: ['Requires 2 days shipping wait']
+            },
+            {
+                id: 'prod-5',
+                title: 'Farm Fresh Toned Milk',
+                category: 'Dairy & Milk',
+                price: 30,
+                unit: 'per 500ml',
+                store: 'Venkateshwara Dairy Store',
+                storeType: 'Local',
+                rating: 4.7,
+                deliveryTime: '10-15 mins',
+                badgeText: 'LOCAL SHOP',
+                image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=400&q=80',
+                description: 'Pasteurized pasteurized toned cow milk packet.',
+                pros: ['Chilled temperature maintained', 'Daily morning supply'],
+                cons: ['Needs boiling before use']
+            },
+            {
+                id: 'prod-6',
+                title: 'Whole Wheat Chakki Atta',
+                category: 'Grocery',
+                price: 45,
+                unit: 'per kg',
+                store: 'Sri Lakshmi Kirana & Grocery',
+                storeType: 'Local',
+                rating: 4.6,
+                deliveryTime: '15-20 mins',
+                badgeText: 'LOCAL SHOP',
+                image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=400&q=80',
+                description: '100% pure stone-ground whole wheat flour for soft rotis.',
+                pros: ['100% Whole wheat', 'Zero maida blending'],
+                cons: ['Store pack in airtight jar']
+            },
+            {
+                id: 'prod-7',
+                title: 'Realme Buds T300 ANC',
+                category: 'Electronics',
+                price: 1999,
+                unit: 'per unit',
+                store: 'Apex Digital World',
+                storeType: 'Local',
+                rating: 4.5,
+                deliveryTime: '30 mins',
+                badgeText: 'LOCAL SHOP',
+                image: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=400&q=80',
+                description: '30dB Active Noise Cancellation earbuds with 12.4mm Dynamic Bass Boost drivers.',
+                pros: ['Active Noise Cancellation', 'Spatial audio support'],
+                cons: ['Slightly higher price point']
+            },
+            {
+                id: 'prod-8',
+                title: 'Refined Sunflower Oil',
+                category: 'Grocery',
+                price: 130,
+                unit: 'per Litre',
+                store: 'Coimbatore Provision Hub',
+                storeType: 'Local',
+                rating: 4.7,
+                deliveryTime: '20 mins',
+                badgeText: 'LOCAL SHOP',
+                image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=400&q=80',
+                description: 'Healthy refined sunflower cooking oil with added Vitamin A & D.',
+                pros: ['Light for daily cooking', 'Fortified vitamins'],
+                cons: ['Standard market pricing']
+            }
+        ];
+
+        const categories = ['All', 'Grocery', 'Dairy & Milk', 'Grains & Rice', 'Electronics'];
+
+        // App State
+        let currentStoreType = 'All';
+        let currentCategory = 'All';
+        let currentSearchQuery = '';
+
+        window.onload = function() {
+            lucide.createIcons();
+            renderCategoryList();
+            updateMatchScores();
+        };
+
+        function renderCategoryList() {
+            const listContainer = document.getElementById('categoryList');
+            let html = '';
+
+            categories.forEach(cat => {
+                const isActive = cat === currentCategory;
+                const activeClasses = isActive 
+                    ? 'bg-emerald-50 text-emerald-900 border border-emerald-200 font-extrabold' 
+                    : 'text-slate-600 hover:bg-slate-50 border border-transparent font-semibold';
+
+                html += `
+                    <button onclick="selectCategory('${cat}')" class="w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-all ${activeClasses}">
+                        <span>${cat}</span>
+                        ${isActive ? '<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i>' : ''}
+                    </button>
+                `;
+            });
+
+            listContainer.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function selectCategory(cat) {
+            currentCategory = cat;
+            renderCategoryList();
+            renderProducts();
+        }
+
+        function setStoreType(type) {
+            currentStoreType = type;
+            
+            // Toggle Button Styling
+            ['All', 'Local', 'Online'].forEach(t => {
+                const btn = document.getElementById(`btnStore${t}`);
+                if (t === type) {
+                    btn.className = 'py-2 rounded-lg bg-white text-slate-900 shadow-sm transition-all font-bold';
+                } else {
+                    btn.className = 'py-2 rounded-lg hover:text-slate-900 transition-all flex items-center justify-center gap-1 font-semibold';
+                }
+            });
+
+            renderProducts();
+        }
+
+        function handleSearch(val) {
+            currentSearchQuery = val.trim().toLowerCase();
+            const clearBtn = document.getElementById('clearSearchBtn');
+
+            if (currentSearchQuery.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+
+            renderProducts();
+        }
+
+        function clearSearch() {
+            document.getElementById('heroSearchInput').value = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            currentSearchQuery = '';
+            renderProducts();
+        }
+
+        function quickSearch(term) {
+            document.getElementById('heroSearchInput').value = term;
+            handleSearch(term);
+        }
+
+        function updateMatchScores() {
+            const wPrice = parseInt(document.getElementById('sliderPrice').value);
+            const wRating = parseInt(document.getElementById('sliderRating').value);
+            const wSpeed = parseInt(document.getElementById('sliderSpeed').value);
+            const wLocal = parseInt(document.getElementById('sliderLocal').value);
+
+            document.getElementById('weightPriceVal').innerText = wPrice + '%';
+            document.getElementById('weightRatingVal').innerText = wRating + '%';
+            document.getElementById('weightSpeedVal').innerText = wSpeed + '%';
+            document.getElementById('weightLocalVal').innerText = wLocal + '%';
+
+            const total = (wPrice + wRating + wSpeed + wLocal) || 1;
+
+            productsDatabase.forEach(item => {
+                const priceScore = Math.max(20, 100 - (item.price / (item.category === 'Electronics' ? 100 : 2)));
+                const ratingScore = (item.rating / 5) * 100;
+                const speedScore = item.storeType === 'Local' ? 98 : 50;
+                const localScore = item.storeType === 'Local' ? 100 : 30;
+
+                const score = ((priceScore * wPrice) + (ratingScore * wRating) + (speedScore * wSpeed) + (localScore * wLocal)) / total;
+                item.matchScore = Math.min(99, Math.max(70, Math.round(score)));
+            });
+
+            renderProducts();
+        }
+
+        function resetWeights() {
+            document.getElementById('sliderPrice').value = 40;
+            document.getElementById('sliderRating').value = 30;
+            document.getElementById('sliderSpeed').value = 20;
+            document.getElementById('sliderLocal').value = 10;
+            updateMatchScores();
+        }
+
+        function resetAll() {
+            currentStoreType = 'All';
+            currentCategory = 'All';
+            currentSearchQuery = '';
+            document.getElementById('heroSearchInput').value = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            setStoreType('All');
+            resetWeights();
+            renderCategoryList();
+        }
+
+        function renderProducts() {
+            const container = document.getElementById('productGrid');
+            const sortVal = document.getElementById('sortSelect').value;
+
+            // Filter logic
+            let filtered = productsDatabase.filter(item => {
+                // Store Type Filter
+                if (currentStoreType !== 'All' && item.storeType !== currentStoreType) {
+                    return false;
+                }
+
+                // Category Filter
+                if (currentCategory !== 'All' && item.category !== currentCategory) {
+                    return false;
+                }
+
+                // Text Search Query Filter
+                if (currentSearchQuery.length > 0) {
+                    const matchesTitle = item.title.toLowerCase().includes(currentSearchQuery);
+                    const matchesCategory = item.category.toLowerCase().includes(currentSearchQuery);
+                    const matchesStore = item.store.toLowerCase().includes(currentSearchQuery);
+                    if (!matchesTitle && !matchesCategory && !matchesStore) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            // Sorting
+            filtered.sort((a, b) => {
+                if (sortVal === 'match') return b.matchScore - a.matchScore;
+                if (sortVal === 'price-low') return a.price - b.price;
+                if (sortVal === 'price-high') return b.price - a.price;
+                if (sortVal === 'rating') return b.rating - a.rating;
+                return 0;
+            });
+
+            // Update Header Count
+            document.getElementById('resultsCountHeading').innerText = `Found ${filtered.length} Items`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full bg-white rounded-2xl p-10 text-center space-y-3 border border-slate-200">
+                        <i data-lucide="package-search" class="w-12 h-12 text-slate-300 mx-auto"></i>
+                        <h4 class="font-extrabold text-slate-800">No items match your criteria</h4>
+                        <p class="text-xs text-slate-400">Try searching for "Rice", "Curd", "Earbuds", or switching categories.</p>
+                        <button onclick="resetAll()" class="mt-2 px-4 py-2 bg-emerald-brand text-slate-950 text-xs font-bold rounded-xl shadow-md">Reset Search & Filters</button>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            let html = '';
+            filtered.forEach(item => {
+                html += `
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/90 hover:shadow-md transition-all flex flex-col justify-between space-y-3">
+                        <!-- Top Badges Row -->
+                        <div class="flex items-center justify-between text-[11px] font-bold">
+                            <div class="flex items-center gap-1.5 text-slate-600">
+                                <span class="w-2 h-2 rounded-full ${item.storeType === 'Local' ? 'bg-emerald-500' : 'bg-blue-500'}"></span>
+                                <span class="uppercase tracking-wider">${item.badgeText}</span>
+                            </div>
+                            <div class="bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                <i data-lucide="sparkles" class="w-3 h-3 text-emerald-600"></i>
+                                <span>${item.matchScore}% Match</span>
+                            </div>
+                        </div>
+
+                        <!-- Main Image & Title Content -->
+                        <div class="flex items-start gap-3">
+                            <img src="${item.image}" alt="${item.title}" class="w-20 h-20 object-cover rounded-xl bg-slate-100 shrink-0 border border-slate-100">
+                            
+                            <div class="space-y-1 min-w-0">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">${item.category}</span>
+                                <h3 class="font-extrabold text-xs sm:text-sm text-slate-900 leading-snug line-clamp-2">${item.title}</h3>
+                                
+                                <div class="flex items-baseline gap-1">
+                                    <span class="text-base font-black text-slate-900">₹${item.price}</span>
+                                    <span class="text-[11px] text-slate-400 font-medium">${item.unit}</span>
+                                </div>
+
+                                <p class="text-[11px] text-slate-500 font-medium truncate flex items-center gap-1">
+                                    <i data-lucide="store" class="w-3 h-3 text-slate-400 shrink-0"></i>
+                                    <span class="truncate">${item.store}</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Card Footer Info & Details Button -->
+                        <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-3 text-slate-500 text-[11px]">
+                                <span class="flex items-center gap-1 font-bold text-slate-700">
+                                    <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i>
+                                    ${item.rating}
+                                </span>
+                                <span class="flex items-center gap-1 text-slate-400">
+                                    <i data-lucide="clock" class="w-3 h-3"></i>
+                                    ${item.deliveryTime}
+                                </span>
+                            </div>
+
+                            <button onclick="openDetailsModal('${item.id}')" class="bg-slate-900 hover:bg-slate-800 text-white font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 transition-all">
+                                <span>Details</span>
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function openDetailsModal(id) {
+            const item = productsDatabase.find(p => p.id === id);
+            if (!item) return;
+
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = `
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <img src="${item.image}" class="w-20 h-20 rounded-2xl object-cover bg-slate-100">
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">${item.category}</span>
+                            <h3 class="font-extrabold text-base text-slate-900 mt-1">${item.title}</h3>
+                            <div class="text-lg font-black text-slate-900">₹${item.price} <span class="text-xs font-normal text-slate-400">${item.unit}</span></div>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-slate-600 leading-relaxed">${item.description}</p>
+
+                    <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1">
+                        <div class="text-xs font-bold text-slate-700">Fulfilled By:</div>
+                        <div class="text-xs text-slate-600 flex items-center justify-between">
+                            <span>${item.store}</span>
+                            <span class="font-bold text-emerald-700">${item.deliveryTime}</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div class="bg-emerald-50/60 p-3 rounded-2xl border border-emerald-100">
+                            <span class="font-bold text-emerald-800 flex items-center gap-1 mb-1"><i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Pros</span>
+                            <ul class="text-[11px] text-emerald-950 space-y-1 list-disc pl-3">
+                                ${item.pros.map(p => `<li>${p}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="bg-amber-50/60 p-3 rounded-2xl border border-amber-100">
+                            <span class="font-bold text-amber-800 flex items-center gap-1 mb-1"><i data-lucide="info" class="w-3.5 h-3.5"></i> Note</span>
+                            <ul class="text-[11px] text-amber-950 space-y-1 list-disc pl-3">
+                                ${item.cons.map(c => `<li>${c}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex gap-3">
+                        <button onclick="contactWhatsApp('${item.store}', '${item.title}')" class="flex-1 py-3 bg-emerald-brand hover:bg-emerald-400 text-slate-950 font-extrabold rounded-2xl text-xs flex items-center justify-center gap-2 transition-all shadow-md">
+                            <i data-lucide="message-square" class="w-4 h-4"></i> Reserve via WhatsApp
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('detailsModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeDetailsModal() {
+            document.getElementById('detailsModal').classList.add('hidden');
+        }
+
+        function openMerchantModal() {
+            document.getElementById('merchantModal').classList.remove('hidden');
+        }
+
+        function closeMerchantModal() {
+            document.getElementById('merchantModal').classList.add('hidden');
+        }
+
+        function handleMerchantSubmit(e) {
+            e.preventDefault();
+            const shop = document.getElementById('mShopName').value;
+            const title = document.getElementById('mItemTitle').value;
+            const price = parseFloat(document.getElementById('mPrice').value);
+            const unit = document.getElementById('mUnit').value;
+            const category = document.getElementById('mCategory').value;
+            const time = document.getElementById('mTime').value || '15 mins';
+
+            const newItem = {
+                id: 'prod-' + (productsDatabase.length + 1),
+                title: title,
+                category: category,
+                price: price,
+                unit: unit,
+                store: shop,
+                storeType: 'Local',
+                rating: 5.0,
+                deliveryTime: time,
+                badgeText: 'LOCAL SHOP',
+                image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80',
+                description: 'Freshly added item from verified local store inventory.',
+                pros: ['Fresh stock', 'Direct local shop support'],
+                cons: ['Limited neighborhood stock']
+            };
+
+            productsDatabase.unshift(newItem);
+            closeMerchantModal();
+            updateMatchScores();
+
+            document.getElementById('merchantForm').reset();
+        }
+
+        function contactWhatsApp(store, item) {
+            const msg = `Hello ${store}, I am interested in buying "${item}" found on LocalLens Chennai. Is it available right now?`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+    </script>
+</body>
+</html>
